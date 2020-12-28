@@ -38,4 +38,4 @@ A powercord plugin to prune messages.
 
 # Support
 
--  eternal#0404
+-  eternal#1000
