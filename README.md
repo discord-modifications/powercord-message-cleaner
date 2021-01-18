@@ -35,7 +35,3 @@ A powercord plugin to prune messages.
 -  `prune all 739493961713975368`
 -  `prune 10`
 -  `prune 10 739493961713975368`
-
-# Support
-
--  eternal#1000
