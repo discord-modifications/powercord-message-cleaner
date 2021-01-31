@@ -5,6 +5,9 @@ const { sleep } = require('powercord/util');
 const Settings = require('./components/Settings');
 
 const { getChannelId } = getModule(['getLastSelectedChannelId'], false);
+const { getChannel } = getModule(['getChannel'], false);
+const { getUser } = getModule(['getUser'], false);
+const { getGuild } = getModule(['getGuild'], false);
 const { getCurrentUser } = getModule(['getCurrentUser'], false);
 const { getToken } = getModule(['getToken'], false);
 
@@ -91,9 +94,30 @@ module.exports = class MessageCleaner extends Plugin {
       delete this.pruning[this.channel];
 
       if (amount !== 0) {
+         let location = this.channel;
+         let instance = await getChannel(location);
+         if (instance.type == 0) {
+            let guild = getGuild(instance.guild_id);
+            location = `in ${guild.name} > #${instance.name}`;
+         } else if (instance.type == 1) {
+            let user = await getUser(instance.recipients[0]);
+            location = `in DMs with ${user.username}#${user.discriminator}`;
+         } else if (instance.type == 3) {
+            if (instance.name.length == 0) {
+               let users = [];
+               for (let user of instance.recipients) {
+                  user = await getUser(user);
+                  users.push(user);
+               }
+               location = `in group with ${users.map(u => `${u.username}#${u.discriminator}`)}`;
+            } else {
+               location = `in group ${instance.name}`;
+            }
+         }
+
          powercord.api.notices.sendToast(`CL_${this.channel}_${this.random(10)}`, {
             header: 'Finished Clearing Messages',
-            content: `Deleted ${amount} messages in ${this.channel}.`,
+            content: `Deleted ${amount} messages ${location}`,
             type: 'success',
             buttons: [
                {
