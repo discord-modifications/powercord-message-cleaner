@@ -10,6 +10,9 @@ const { getUser } = getModule(['getUser'], false);
 const { getGuild } = getModule(['getGuild'], false);
 const { getCurrentUser } = getModule(['getCurrentUser'], false);
 const { getToken } = getModule(['getToken'], false);
+const ChannelStore = getModule(['openPrivateChannel'], false);
+const { transitionTo } = getModule(['transitionTo'], false);
+
 
 module.exports = class MessageCleaner extends Plugin {
    startPlugin() {
@@ -121,10 +124,20 @@ module.exports = class MessageCleaner extends Plugin {
             type: 'success',
             buttons: [
                {
-                  text: 'Ok',
-                  color: 'green',
+                  text: `Jump to ${instance.type == 0 ? `#${instance.name}` : instance.type == 3 ? 'Group' : 'DM'}`,
+                  color: 'brand',
                   size: 'small',
-                  look: 'outlined'
+                  look: 'ghost',
+                  onClick: () => {
+                     if (instance.type == 1) return ChannelStore.openPrivateChannel(instance.recipients[0]);
+                     transitionTo(`/channels/${instance.guild_id || '@me'}/${instance.id}`);
+                  }
+               },
+               {
+                  text: 'Dismiss',
+                  color: 'red',
+                  size: 'small',
+                  look: 'ghost'
                }
             ]
          });
