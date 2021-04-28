@@ -1,4 +1,4 @@
-const { getModule, messages } = require('powercord/webpack');
+const { getModule } = require('powercord/webpack');
 const { Plugin } = require('powercord/entities');
 const { get, del } = require('powercord/http');
 const { sleep } = require('powercord/util');
@@ -55,24 +55,22 @@ module.exports = class MessageCleaner extends Plugin {
    }
 
    async clear(args) {
-      const { BOT_AVATARS } = getModule(['BOT_AVATARS'], false);
-      const { createBotMessage } = getModule(['createBotMessage'], false);
-
       this.channel = getChannelId();
 
-      const receivedMessage = createBotMessage(this.channel, {});
-      BOT_AVATARS.message_cleaner = 'https://i.imgur.com/dOe7F3y.png';
-      receivedMessage.author.username = 'Message Cleaner';
-      receivedMessage.author.avatar = 'message_cleaner';
-
       if (args.length === 0) {
-         receivedMessage.content = 'Please specify an amount.';
-         return messages.receiveMessage(receivedMessage.channel_id, receivedMessage);
+         return powercord.api.notices.sendToast(this.random(20), {
+            header: 'Please specify an amount.',
+            type: 'danger',
+            timeout: 3000
+         });
       }
 
       if (this.pruning[this.channel] == true) {
-         receivedMessage.content = `Already pruning in this channel.`;
-         return messages.receiveMessage(receivedMessage.channel_id, receivedMessage);
+         return powercord.api.notices.sendToast(this.random(20), {
+            header: 'Already pruning in this channel.',
+            type: 'danger',
+            timeout: 3000
+         });
       }
 
       let count = args.shift();
@@ -84,17 +82,29 @@ module.exports = class MessageCleaner extends Plugin {
          count = parseInt(count);
       }
 
-      if (count <= 0 || count == NaN) {
-         receivedMessage.content = 'Amount must be specified.';
-         return messages.receiveMessage(receivedMessage.channel_id, receivedMessage);
+      if (Number.isNaN(count) || count <= 0) {
+         return powercord.api.notices.sendToast(this.random(20), {
+            header: 'Please specify an amount.',
+            type: 'danger',
+            timeout: 3000
+         });
       }
 
-      receivedMessage.content = `Started clearing.`;
-      messages.receiveMessage(receivedMessage.channel_id, receivedMessage);
+      let startedId = this.random(20);
+      powercord.api.notices.sendToast(startedId, {
+         header: 'Started pruning.',
+         type: 'success',
+         timeout: 3000
+      });
 
       let amount = this.settings.get('mode', 1) ? await this.burstDelete(count, before, this.channel) : await this.normalDelete(count, before, this.channel);
 
       delete this.pruning[this.channel];
+
+
+      if (Object.keys(powercord.api.notices.toasts).includes(startedId)) {
+         powercord.api.notices.closeToast(startedId);
+      }
 
       if (amount !== 0) {
          let location = this.channel;
@@ -118,7 +128,7 @@ module.exports = class MessageCleaner extends Plugin {
             }
          }
 
-         powercord.api.notices.sendToast(`CL_${this.channel}_${this.random(10)}`, {
+         return powercord.api.notices.sendToast(this.random(20), {
             header: 'Finished Clearing Messages',
             content: `Deleted ${amount} messages ${location}`,
             type: 'success',
@@ -141,13 +151,13 @@ module.exports = class MessageCleaner extends Plugin {
                }
             ]
          });
-
-         receivedMessage.content = `Cleared ${amount} messages.`;
       } else {
-         receivedMessage.content = `No messages found.`;
+         return powercord.api.notices.sendToast(this.random(20), {
+            header: 'No messages found.',
+            type: 'danger',
+            timeout: 3000
+         });
       }
-
-      return messages.receiveMessage(receivedMessage.channel_id, receivedMessage);
    }
 
    async normalDelete(count, before, channel) {
@@ -272,7 +282,7 @@ module.exports = class MessageCleaner extends Plugin {
       };
    }
 
-   async random(length) {
+   random(length) {
       var result = '';
       var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
       var charactersLength = characters.length;
