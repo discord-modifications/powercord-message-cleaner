@@ -1,7 +1,15 @@
 const { React } = require('powercord/webpack');
-const { SliderInput, RadioGroup } = require('powercord/components/settings');
+const { SliderInput, RadioGroup, TextInput } = require('powercord/components/settings');
 
 module.exports = class Settings extends React.Component {
+   constructor() {
+      super();
+
+      this.state = {
+         editError: null
+      };
+   }
+
    renderBurst() {
       return (
          <div>
@@ -68,6 +76,34 @@ module.exports = class Settings extends React.Component {
             >
                Deletion Mode
             </RadioGroup>
+            <RadioGroup
+               value={this.props.getSetting('action', 0)}
+               onChange={(v) => this.props.updateSetting('action', v.value)}
+               options={[
+                  { name: 'Delete: Deletes the message (hits ratelimits more often)', value: 0 },
+                  { name: 'Edit: Edits the message (hits ratelimits less)', value: 1 }
+               ]}
+            >
+               Action
+            </RadioGroup>
+            {(this.props.getSetting('action', 0) == 1) ?
+               <TextInput
+                  note='The text to edit the message to.'
+                  defaultValue={this.props.getSetting('editMessage', '.')}
+                  error={this.state.editError}
+                  required={true}
+                  onChange={(val) => {
+                     this.setState({ editError: null });
+                     if (val.length) {
+                        this.props.updateSetting('editMessage', val);
+                     } else {
+                        this.setState({ editError: 'This field is required.' });
+                     }
+                  }}
+               >
+                  Edit Message
+               </TextInput> : ''
+            }
             <SliderInput
                minValue={500}
                maxValue={1500}

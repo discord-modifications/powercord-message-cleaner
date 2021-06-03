@@ -1,8 +1,11 @@
+const GenericRequest = require('../../../fake_node_modules/powercord/http/GenericRequest');
 const { getModule } = require('powercord/webpack');
 const { Plugin } = require('powercord/entities');
 const { get, del } = require('powercord/http');
 const { sleep } = require('powercord/util');
-const Settings = require('./components/Settings');
+const patch = (url) => {
+   return new GenericRequest('PATCH', url);
+};
 
 const { getChannelId } = getModule(['getLastSelectedChannelId'], false);
 const { getChannel } = getModule(['getChannel'], false);
@@ -12,7 +15,6 @@ const { getCurrentUser } = getModule(['getCurrentUser'], false);
 const { getToken } = getModule(['getToken'], false);
 const ChannelStore = getModule(['openPrivateChannel'], false);
 const { transitionTo } = getModule(['transitionTo'], false);
-
 
 module.exports = class MessageCleaner extends Plugin {
    startPlugin() {
@@ -45,7 +47,7 @@ module.exports = class MessageCleaner extends Plugin {
       powercord.api.settings.registerSettings('message-cleaner', {
          category: this.entityID,
          label: 'Message Cleaner',
-         render: Settings
+         render: require('./components/Settings')
       });
    }
 
@@ -97,7 +99,8 @@ module.exports = class MessageCleaner extends Plugin {
          timeout: 3000
       });
 
-      let amount = this.settings.get('mode', 1) ? await this.burstDelete(count, before, this.channel) : await this.normalDelete(count, before, this.channel);
+      let action = this.settings.get('action', 0);
+      let amount = this.settings.get('mode', 1) ? await this.burstDelete(count, before, this.channel, action) : await this.normalDelete(count, before, this.channel, action);
 
       delete this.pruning[this.channel];
 
@@ -137,7 +140,7 @@ module.exports = class MessageCleaner extends Plugin {
                   text: `Jump to ${instance.type == 0 ? `#${instance.name}` : instance.type == 3 ? 'Group' : 'DM'}`,
                   color: 'brand',
                   size: 'small',
-                  look: 'ghost',
+                  look: 'outlined',
                   onClick: () => {
                      if (instance.type == 1) return ChannelStore.openPrivateChannel(instance.recipients[0]);
                      transitionTo(`/channels/${instance.guild_id || '@me'}/${instance.id}`);
@@ -147,7 +150,7 @@ module.exports = class MessageCleaner extends Plugin {
                   text: 'Dismiss',
                   color: 'red',
                   size: 'small',
-                  look: 'ghost'
+                  look: 'outlined'
                }
             ]
          });
@@ -160,7 +163,7 @@ module.exports = class MessageCleaner extends Plugin {
       }
    }
 
-   async normalDelete(count, before, channel) {
+   async normalDelete(count, before, channel, mode) {
       let deleted = 0;
       let offset = 0;
       while (count == 'all' || count > deleted) {
@@ -171,13 +174,13 @@ module.exports = class MessageCleaner extends Plugin {
          while (count !== 'all' && count < get.messages.length) get.messages.pop();
          for (const msg of get.messages) {
             await sleep(this.settings.get('normalDelay', 150));
-            deleted += await this.deleteMsg(msg.id, channel);
+            deleted += await this.deleteMsg(msg.id, channel, mode);
          }
       }
       return deleted;
    }
 
-   async burstDelete(count, before, channel) {
+   async burstDelete(count, before, channel, mode) {
       let deleted = 0;
       let offset = 0;
       while (count == 'all' || count > deleted) {
@@ -191,7 +194,7 @@ module.exports = class MessageCleaner extends Plugin {
             let funcs = [];
             for (const msg of msgs) {
                funcs.push(async () => {
-                  return await this.deleteMsg(msg.id, channel);
+                  return await this.deleteMsg(msg.id, channel, mode);
                });
             }
             await Promise.all(
@@ -208,15 +211,19 @@ module.exports = class MessageCleaner extends Plugin {
       return deleted;
    }
 
-   async deleteMsg(id, channel) {
+   async deleteMsg(id, channel, mode) {
       let deleted = 0;
-      await del(`https://discord.com/api/v6/channels/${channel}/messages/${id}`)
+      let func = mode ? patch : del;
+      await func(`https://discord.com/api/v6/channels/${channel}/messages/${id}`)
          .set('User-Agent', navigator.userAgent)
+         .set('Content-Type', 'application/json')
          .set('Authorization', getToken())
+         .send({ content: this.settings.get('editMessage', '.') })
          .then(() => {
             deleted++;
          })
          .catch(async (err) => {
+            console.log(err);
             switch (err.statusCode) {
                case 404:
                   this.log(`Can't delete ${id} (Already deleted?)`);
@@ -224,7 +231,7 @@ module.exports = class MessageCleaner extends Plugin {
                case 429:
                   this.log(`Ratelimited while deleting ${id}. Waiting ${err.body.retry_after}ms`);
                   await sleep(err.body.retry_after);
-                  deleted += await this.deleteMsg(id, channel);
+                  deleted += await this.deleteMsg(id, channel, mode);
                   break;
                default:
                   this.log(`Can't delete ${id} (Response: ${err.statusCode})`);
