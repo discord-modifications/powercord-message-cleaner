@@ -132,7 +132,7 @@ module.exports = class Settings extends React.Component {
                   onMarkerRender={(v) => `${Math.floor((v / 1000) * 100) / 100}s`}
                >
                   Search Delay
-                     </SliderInput>
+               </SliderInput>
                {this.props.getSetting('mode', 1) ? this.renderBurst() : this.renderNormal()}
             </Category>
          </div>
