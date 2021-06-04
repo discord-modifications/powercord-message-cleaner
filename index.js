@@ -218,7 +218,7 @@ module.exports = class MessageCleaner extends Plugin {
          .set('User-Agent', navigator.userAgent)
          .set('Content-Type', 'application/json')
          .set('Authorization', getToken())
-         .send({ content: this.settings.get('editMessage', '.') })
+         .send({ content: this.settings.get('editMessage', '⠀') })
          .then(() => {
             deleted++;
          })
