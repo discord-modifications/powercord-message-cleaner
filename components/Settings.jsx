@@ -86,8 +86,8 @@ module.exports = class Settings extends React.Component {
                value={this.props.getSetting('action', 0)}
                onChange={(v) => this.props.updateSetting('action', v.value)}
                options={[
-                  { name: 'Delete: Deletes the message (hits ratelimits more often)', value: 0 },
-                  { name: 'Edit: Edits the message (hits ratelimits less)', value: 1 }
+                  { name: 'Delete: Deletes the message', value: 0 },
+                  { name: 'Edit: Edits the message', value: 1 }
                ]}
             >
                Action
