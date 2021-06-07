@@ -16,6 +16,13 @@ const { getToken } = getModule(['getToken'], false);
 const ChannelStore = getModule(['openPrivateChannel'], false);
 const { transitionTo } = getModule(['transitionTo'], false);
 
+let toastIds = {
+   noAmount: 'message-cleaner-no-amount',
+   stillRunning: 'message-cleaner-still-running',
+   noAmountParsed: 'message-cleaner-no-amount',
+   finished: 'message-cleaner-finished'
+};
+
 module.exports = class MessageCleaner extends Plugin {
    startPlugin() {
       this.pruning = {};
@@ -41,7 +48,7 @@ module.exports = class MessageCleaner extends Plugin {
          aliases: this.settings.get('aliases'),
          description: 'Clears a certain amount of messages.',
          usage: '{c} (amount) [beforeMessageId]',
-         executor: (args) => this.clear(args)
+         executor: this.clear.bind(this)
       });
 
       powercord.api.settings.registerSettings('message-cleaner', {
@@ -57,60 +64,48 @@ module.exports = class MessageCleaner extends Plugin {
    }
 
    async clear(args) {
-      this.channel = getChannelId();
+      let channel = getChannelId();
+      this.clearToasts(channel);
 
       if (args.length === 0) {
-         return powercord.api.notices.sendToast(this.random(20), {
+         return powercord.api.notices.sendToast(`${toastIds.noAmount}-${channel}`, {
             header: 'Please specify an amount.',
-            type: 'danger',
-            timeout: 3000
+            type: 'danger'
          });
       }
 
-      if (this.pruning[this.channel] == true) {
-         return powercord.api.notices.sendToast(this.random(20), {
+      if (this.pruning[channel] == true) {
+         return powercord.api.notices.sendToast(`${toastIds.stillRunning}-${channel}`, {
             header: 'Already pruning in this channel.',
-            type: 'danger',
-            timeout: 3000
+            type: 'danger'
          });
       }
 
       let count = args.shift();
       let before = args.shift();
 
-      this.pruning[this.channel] = true;
+      this.pruning[channel] = true;
 
       if (count !== 'all') {
          count = parseInt(count);
       }
 
       if (Number.isNaN(count) || count <= 0) {
-         return powercord.api.notices.sendToast(this.random(20), {
+         return powercord.api.notices.sendToast(`${toastIds.noAmountParsed}-${channel}`, {
             header: 'Please specify an amount.',
-            type: 'danger',
-            timeout: 3000
+            type: 'danger'
          });
       }
 
-      let startedId = this.random(20);
-      powercord.api.notices.sendToast(startedId, {
-         header: 'Started pruning.',
-         type: 'success',
-         timeout: 3000
-      });
-
       let action = this.settings.get('action', 0);
-      let amount = this.settings.get('mode', 1) ? await this.burstDelete(count, before, this.channel, action) : await this.normalDelete(count, before, this.channel, action);
+      let amount = this.settings.get('mode', 1) ? await this.burstDelete(count, before, channel, action) : await this.normalDelete(count, before, channel, action);
 
-      delete this.pruning[this.channel];
+      delete this.pruning[channel];
 
-
-      if (Object.keys(powercord.api.notices.toasts).includes(startedId)) {
-         powercord.api.notices.closeToast(startedId);
-      }
+      this.clearToasts(channel);
 
       if (amount !== 0) {
-         let location = this.channel;
+         let location = channel;
          let instance = await getChannel(location);
          if (instance.type == 0) {
             let guild = getGuild(instance.guild_id);
@@ -131,9 +126,9 @@ module.exports = class MessageCleaner extends Plugin {
             }
          }
 
-         return powercord.api.notices.sendToast(this.random(20), {
+         return powercord.api.notices.sendToast(`${toastIds.finished}-${channel}`, {
             header: 'Finished Clearing Messages',
-            content: `Deleted ${amount} messages ${location}`,
+            content: `Cleared ${amount} messages ${location}`,
             type: 'success',
             buttons: [
                {
@@ -157,8 +152,7 @@ module.exports = class MessageCleaner extends Plugin {
       } else {
          return powercord.api.notices.sendToast(this.random(20), {
             header: 'No messages found.',
-            type: 'danger',
-            timeout: 3000
+            type: 'danger'
          });
       }
    }
@@ -223,7 +217,6 @@ module.exports = class MessageCleaner extends Plugin {
             deleted++;
          })
          .catch(async (err) => {
-            console.log(err);
             switch (err.statusCode) {
                case 404:
                   this.log(`Can't delete ${id} (Already deleted?)`);
@@ -234,7 +227,7 @@ module.exports = class MessageCleaner extends Plugin {
                   deleted += await this.deleteMsg(id, channel, mode);
                   break;
                default:
-                  this.log(`Can't delete ${id} (Response: ${err.statusCode})`);
+                  this.log(`Can't delete ${id} (Response: ${err.statusCode} | ${err.body})`);
                   break;
             }
          });
@@ -287,6 +280,19 @@ module.exports = class MessageCleaner extends Plugin {
          offset: skippedMsgs + offset,
          skipped: skippedMsgs
       };
+   }
+
+   clearToasts(channel) {
+      let toasts = document.querySelector('.powercord-toast-container');
+      if (toasts) {
+         for (let i of (toasts.children ?? [])) {
+            let id = toasts.children[i]?.id;
+            if (id?.includes('message-cleaner') && id?.includes(channel)) toasts[i].remove();
+         }
+         for (let t in powercord.api.notices.toasts) {
+            if (t.includes('message-cleaner') && t.includes(channel)) delete powercord.api.notices.toasts[t];
+         }
+      }
    }
 
    random(length) {
