@@ -252,13 +252,13 @@ module.exports = class MessageCleaner extends Plugin {
                   break;
             }
          });
-      if (messages.body.message && messages.body.message.startsWith('Index')) {
+      if (messages?.body?.message?.startsWith('Index')) {
          await sleep(messages.body.retry_after);
          return this.fetch(channel, user, before, offset);
       }
 
-      let msgs = messages.body.messages;
-      if (!msgs.length) {
+      let msgs = messages?.body?.messages;
+      if (!msgs?.length) {
          return {
             messages: [],
             offset: offset,
