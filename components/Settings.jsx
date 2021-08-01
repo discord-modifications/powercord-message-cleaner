@@ -1,9 +1,7 @@
 const { React } = require('powercord/webpack');
 const {
    SliderInput,
-   RadioGroup,
-   TextInput,
-   Category
+   RadioGroup
 } = require('powercord/components/settings');
 
 module.exports = class Settings extends React.Component {
@@ -82,59 +80,20 @@ module.exports = class Settings extends React.Component {
             >
                Deletion Mode
             </RadioGroup>
-            <RadioGroup
-               value={this.props.getSetting('action', 0)}
-               onChange={(v) => this.props.updateSetting('action', v.value)}
-               options={[
-                  { name: 'Delete: Deletes the message', value: 0 },
-                  { name: 'Edit: Edits the message', value: 1 }
-               ]}
+            <SliderInput
+               minValue={500}
+               maxValue={1500}
+               stickToMarkers
+               markers={[150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250]}
+               defaultValue={200}
+               initialValue={this.props.getSetting('searchDelay', 200)}
+               onValueChange={(val) => this.props.updateSetting('searchDelay', Math.floor(parseInt(val)))}
+               note='Delay between fetching messages'
+               onMarkerRender={(v) => `${Math.floor((v / 1000) * 100) / 100}s`}
             >
-               Action
-            </RadioGroup>
-            {this.props.getSetting('action', 0) == 1 ?
-               <TextInput
-                  note='The text to edit the message to.'
-                  defaultValue={this.props.getSetting('editMessage', '⠀')}
-                  error={this.state.editError}
-                  required={true}
-                  onChange={(val) => {
-                     this.setState({ editError: null });
-                     if (val.length) {
-                        this.props.updateSetting('editMessage', val);
-                     } else {
-                        this.setState({ editError: 'This field is required.' });
-                     }
-                  }}
-               >
-                  Edit Message
-               </TextInput> : ''
-            }
-            <Category
-               name='Delays'
-               opened={this.state.delayExpanded}
-               description='Manage delays and other number based sizes.'
-               onChange={() =>
-                  this.setState({
-                     delayExpanded: !this.state.delayExpanded
-                  })
-               }
-            >
-               <SliderInput
-                  minValue={500}
-                  maxValue={1500}
-                  stickToMarkers
-                  markers={[150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250]}
-                  defaultValue={200}
-                  initialValue={this.props.getSetting('searchDelay', 200)}
-                  onValueChange={(val) => this.props.updateSetting('searchDelay', Math.floor(parseInt(val)))}
-                  note='Delay between fetching messages'
-                  onMarkerRender={(v) => `${Math.floor((v / 1000) * 100) / 100}s`}
-               >
-                  Search Delay
-               </SliderInput>
-               {this.props.getSetting('mode', 1) ? this.renderBurst() : this.renderNormal()}
-            </Category>
+               Search Delay
+            </SliderInput>
+            {this.props.getSetting('mode', 1) ? this.renderBurst() : this.renderNormal()}
          </div>
       );
    }

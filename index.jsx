@@ -1,17 +1,11 @@
-const GenericRequest = require('../../../fake_node_modules/powercord/http/GenericRequest');
 const { inject, uninject } = require('powercord/injector');
 const { getModule, React, constants: { Routes } } = require('powercord/webpack');
 const { Plugin } = require('powercord/entities');
 const { get, del } = require('powercord/http');
 const { sleep, findInReactTree } = require('powercord/util');
 
-const patch = (url) => {
-   return new GenericRequest('PATCH', url);
-};
-
 const { getChannelId } = getModule(['getLastSelectedChannelId'], false);
 const { getCurrentUser } = getModule(['getCurrentUser'], false);
-const { lastMessageId } = getModule(['lastMessageId'], false);
 const ChannelStore = getModule(['openPrivateChannel'], false);
 const { transitionTo } = getModule(['transitionTo'], false);
 const { getChannel } = getModule(['getChannel'], false);
@@ -109,8 +103,6 @@ module.exports = class MessageCleaner extends Plugin {
 
       let count = args.shift();
       let before = args.shift();
-
-      if (!before) before = lastMessageId(channel);
 
       this.pruning[channel] = true;
 
@@ -296,12 +288,10 @@ module.exports = class MessageCleaner extends Plugin {
 
    async deleteMsg(id, channel, mode) {
       let deleted = 0;
-      let func = mode ? patch : del;
-      await func(`https://discord.com/api/v6/channels/${channel}/messages/${id}`)
+      await del(`https://discord.com/api/v6/channels/${channel}/messages/${id}`)
          .set('User-Agent', navigator.userAgent)
          .set('Content-Type', 'application/json')
          .set('Authorization', getToken())
-         .send({ content: this.settings.get('editMessage', '⠀') })
          .then(() => {
             deleted++;
          })
