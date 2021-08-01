@@ -366,7 +366,7 @@ module.exports = class MessageCleaner extends Plugin {
       let skippedMsgs = 0;
       for (let bulk of msgs) {
          bulk = bulk.filter((msg) => msg.hit == true);
-         out.push(...bulk.filter((msg) => msg.type === 0 || msg.type === 6));
+         out.push(...bulk.filter((msg) => msg.type === 0 || msg.type === 6 || msg.type === 19));
          skippedMsgs += bulk.filter((msg) => !out.find((m) => m.id === msg.id)).length;
       }
 
