@@ -11,6 +11,7 @@ const patch = (url) => {
 
 const { getChannelId } = getModule(['getLastSelectedChannelId'], false);
 const { getCurrentUser } = getModule(['getCurrentUser'], false);
+const { lastMessageId } = getModule(['lastMessageId'], false);
 const ChannelStore = getModule(['openPrivateChannel'], false);
 const { transitionTo } = getModule(['transitionTo'], false);
 const { getChannel } = getModule(['getChannel'], false);
@@ -83,13 +84,6 @@ module.exports = class MessageCleaner extends Plugin {
          });
       }
 
-      if (this.pruning[channel] == true && args[0]?.toLowerCase() !== 'stop') {
-         return powercord.api.notices.sendToast(`${Toasts.stillRunning}-${channel}`, {
-            header: 'Already pruning in this channel.',
-            type: 'danger'
-         });
-      }
-
       if (args[0]?.toLowerCase() === 'stop') {
          delete this.pruning[channel];
          return powercord.api.notices.sendToast(`${Toasts.stopped}-${channel}`, {
@@ -98,8 +92,17 @@ module.exports = class MessageCleaner extends Plugin {
          });
       }
 
+      if (this.pruning[channel] == true) {
+         return powercord.api.notices.sendToast(`${Toasts.stillRunning}-${channel}`, {
+            header: 'Already pruning in this channel.',
+            type: 'danger'
+         });
+      }
+
       let count = args.shift();
       let before = args.shift();
+
+      if (!before) before = lastMessageId(channel);
 
       this.pruning[channel] = true;
 
