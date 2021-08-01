@@ -23,6 +23,7 @@ const { getUser } = getModule(['getUser'], false);
 const Toasts = {
    stillRunning: 'message-cleaner-still-running',
    noAmountParsed: 'message-cleaner-no-amount',
+   notPruning: 'message-cleaner-not-pruning',
    noAmount: 'message-cleaner-no-amount',
    finished: 'message-cleaner-finished',
    started: 'message-cleaner-started',
@@ -85,6 +86,13 @@ module.exports = class MessageCleaner extends Plugin {
       }
 
       if (args[0]?.toLowerCase() === 'stop') {
+         if (!this.pruning[channel]) {
+            return powercord.api.notices.sendToast(`${Toasts.notPruning}-${channel}`, {
+               header: 'Not pruning in this channel.',
+               type: 'danger'
+            });
+         }
+
          delete this.pruning[channel];
          return powercord.api.notices.sendToast(`${Toasts.stopped}-${channel}`, {
             header: 'Stopped pruning.',
