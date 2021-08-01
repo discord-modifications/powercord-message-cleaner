@@ -31,7 +31,9 @@ A powercord plugin to prune messages.
 -  `clear all 739493961713975368`
 -  `clear 10`
 -  `clear 10 739493961713975368`
+-  `clear stop`
 -  `prune all`
 -  `prune all 739493961713975368`
 -  `prune 10`
 -  `prune 10 739493961713975368`
+-  `prune stop`

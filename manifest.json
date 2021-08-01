@@ -1,6 +1,6 @@
 {
    "name": "Message Cleaner",
-   "version": "1.0",
+   "version": "2.0.0",
    "description": "Clears messages in the current channel.",
    "author": "eternal",
    "license": "Unlicensed"
