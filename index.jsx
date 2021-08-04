@@ -134,14 +134,14 @@ module.exports = class MessageCleaner extends Plugin {
          let instance = guild ? getGuild(location) : await getChannel(location);
          if (guild) {
             location = `in ${instance.name}`;
-         } else if (instance.type == 0) {
+         } else if (instance?.type == 0) {
             let guild = getGuild(instance.guild_id);
             location = `in ${guild.name} > #${instance.name}`;
-         } else if (instance.type == 1) {
+         } else if (instance?.type == 1) {
             let user = await getUser(instance.recipients[0]);
             location = `in DMs with ${user.username}#${user.discriminator}`;
-         } else if (instance.type == 3) {
-            if (instance.name.length == 0) {
+         } else if (instance?.type == 3) {
+            if (instance?.name.length == 0) {
                let users = [];
                for (let user of instance.recipients) {
                   user = await getUser(user);
