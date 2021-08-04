@@ -197,6 +197,10 @@ module.exports = class MessageCleaner extends Plugin {
       const GuildContextMenu = getModule(m => m.default?.displayName == 'GuildContextMenu', false);
       this.patch('mc-context-menu-guild', GuildContextMenu, 'default', this.processContextMenu.bind(this));
       GuildContextMenu.default.displayName = 'GuildContextMenu';
+
+      const GroupDMContextMenu = getModule(m => m.default?.displayName == 'GroupDMContextMenu', false);
+      this.patch('mc-context-menu-group', GroupDMContextMenu, 'default', this.processContextMenu.bind(this));
+      GroupDMContextMenu.default.displayName = 'GroupDMContextMenu';
    }
 
    processContextMenu(args, res) {
