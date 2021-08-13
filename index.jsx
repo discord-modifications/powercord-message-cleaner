@@ -104,8 +104,6 @@ module.exports = class MessageCleaner extends Plugin {
       let count = args.shift();
       let before = args.shift();
 
-      this.pruning[channel] = true;
-
       if (count !== 'all') {
          count = parseInt(count);
       }
@@ -116,6 +114,8 @@ module.exports = class MessageCleaner extends Plugin {
             type: 'danger'
          });
       }
+
+      this.pruning[channel] = true;
 
       powercord.api.notices.sendToast(`${Toasts.started}-${channel}`, {
          header: 'Started pruning',
