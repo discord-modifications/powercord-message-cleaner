@@ -3,5 +3,6 @@
    "version": "2.0.0",
    "description": "Clears messages in the current channel.",
    "author": "eternal",
+   "discord": "shnvz5ryAt",
    "license": "Unlicensed"
 }
