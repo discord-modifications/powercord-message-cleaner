@@ -203,10 +203,10 @@ module.exports = class MessageCleaner extends Plugin {
    }
 
    processContextMenu(args, res) {
-      let channel = !res.props?.navId?.includes('guild');
-      let children = findInReactTree(res, r => Array.isArray(r));
-      let instance = channel ? args[0].channel?.id : args[0].guild?.id;
-      let mute = findInReactTree(children, (c) => {
+      const channel = !res.props?.navId?.includes('guild');
+      const children = findInReactTree(res, r => Array.isArray(r));
+      const instance = channel ? args[0].channel?.id : args[0].guild?.id;
+      const mute = findInReactTree(children, (c) => {
          const children = c?.props?.children;
          if (!children || (Array.isArray(children) && !children.length)) return false;
 
@@ -223,8 +223,8 @@ module.exports = class MessageCleaner extends Plugin {
             return items.includes(children.props?.id);
          }
       });
-      let old = mute?.props?.children;
 
+      const old = mute?.props?.children;
       if (mute && old) {
          const button = (!this.pruning[instance] ?
             <MenuItem
