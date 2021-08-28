@@ -10,6 +10,11 @@ A powercord plugin to prune messages.
 
 -  `git clone https://github.com/slow/message-cleaner`
 
+# Previews
+
+![Preview](https://i.imgur.com/GvPunQp.png)
+![Preview](https://i.imgur.com/e9tgbwO.png)
+
 # Usage
 
 -  `clear all beforeId`
