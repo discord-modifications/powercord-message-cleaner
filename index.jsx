@@ -122,8 +122,7 @@ module.exports = class MessageCleaner extends Plugin {
          type: 'success'
       });
 
-      let action = this.settings.get('action', 0);
-      let amount = this.settings.get('mode', 1) ? await this.burstDelete(count, before, channel, action, guild) : await this.normalDelete(count, before, channel, action, guild);
+      let amount = this.settings.get('mode', 1) ? await this.burstDelete(count, before, channel, guild) : await this.normalDelete(count, before, channel, guild);
 
       delete this.pruning[channel];
 
@@ -239,7 +238,7 @@ module.exports = class MessageCleaner extends Plugin {
       return res;
    }
 
-   async normalDelete(count, before, channel, mode, guild) {
+   async normalDelete(count, before, channel, guild) {
       let deleted = 0;
       let offset = 0;
       while (count == 'all' || count > deleted) {
@@ -251,13 +250,13 @@ module.exports = class MessageCleaner extends Plugin {
          for (const msg of get.messages) {
             if (!this.pruning[channel]) break;
             await sleep(this.settings.get('normalDelay', 150));
-            deleted += await this.deleteMsg(msg.id, msg.channel_id, mode);
+            deleted += await this.deleteMsg(msg.id, msg.channel_id);
          }
       }
       return deleted;
    }
 
-   async burstDelete(count, before, channel, mode, guild) {
+   async burstDelete(count, before, channel, guild) {
       let deleted = 0;
       let offset = 0;
       while (count == 'all' || count > deleted) {
@@ -271,7 +270,7 @@ module.exports = class MessageCleaner extends Plugin {
             let funcs = [];
             for (const msg of msgs) {
                funcs.push(async () => {
-                  return await this.deleteMsg(msg.id, msg.channel_id, mode);
+                  return await this.deleteMsg(msg.id, msg.channel_id);
                });
             }
             await Promise.all(
@@ -290,7 +289,7 @@ module.exports = class MessageCleaner extends Plugin {
       return deleted;
    }
 
-   async deleteMsg(id, channel, mode) {
+   async deleteMsg(id, channel) {
       let deleted = 0;
       await del(`https://discord.com/api/v6/channels/${channel}/messages/${id}`)
          .set('User-Agent', navigator.userAgent)
@@ -307,7 +306,7 @@ module.exports = class MessageCleaner extends Plugin {
                case 429:
                   this.log(`Ratelimited while deleting ${id}. Waiting ${err.body.retry_after}ms`);
                   await sleep(err.body.retry_after);
-                  deleted += await this.deleteMsg(id, channel, mode);
+                  deleted += await this.deleteMsg(id, channel);
                   break;
                default:
                   this.log(`Can't delete ${id} (Response: ${err.statusCode} | ${err.body})`);
