@@ -206,12 +206,23 @@ module.exports = class MessageCleaner extends Plugin {
       let channel = !res.props?.navId?.includes('guild');
       let children = findInReactTree(res, r => Array.isArray(r));
       let instance = channel ? args[0].channel?.id : args[0].guild?.id;
-      let mute = findInReactTree(children, c => [
-         'unmute-channel',
-         'unmute-guild',
-         'mute-channel',
-         'mute-guild'
-      ].includes(c.props?.children?.props?.id));
+      let mute = findInReactTree(children, (c) => {
+         const children = c?.props?.children;
+         if (!children || (Array.isArray(children) && !children.length)) return false;
+
+         const items = [
+            'unmute-channel',
+            'unmute-guild',
+            'mute-channel',
+            'mute-guild'
+         ];
+
+         if (children.length) {
+            return children.find(child => items.includes(child?.props?.id));
+         } else {
+            return items.includes(children.props?.id);
+         }
+      });
       let old = mute?.props?.children;
 
       if (mute && old) {
