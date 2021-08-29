@@ -80,19 +80,6 @@ module.exports = class Settings extends React.Component {
             >
                Deletion Mode
             </RadioGroup>
-            <SliderInput
-               minValue={500}
-               maxValue={1500}
-               stickToMarkers
-               markers={[150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250]}
-               defaultValue={200}
-               initialValue={this.props.getSetting('searchDelay', 200)}
-               onValueChange={(val) => this.props.updateSetting('searchDelay', Math.floor(parseInt(val)))}
-               note='Delay between fetching messages'
-               onMarkerRender={(v) => `${Math.floor((v / 1000) * 100) / 100}s`}
-            >
-               Search Delay
-            </SliderInput>
             {this.props.getSetting('mode', 1) ? this.renderBurst() : this.renderNormal()}
          </div>
       );

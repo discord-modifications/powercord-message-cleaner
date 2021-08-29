@@ -374,8 +374,6 @@ module.exports = class MessageCleaner extends Plugin {
          skippedMsgs += bulk.filter((msg) => !out.find((m) => m.id === msg.id)).length;
       }
 
-      await sleep(this.settings.get('searchDelay', 200));
-
       return {
          messages: out.sort((a, b) => b.id - a.id),
          offset: skippedMsgs + offset,
