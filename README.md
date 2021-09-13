@@ -1,4 +1,4 @@
-# Message Cleaner [![CodeFactor](https://www.codefactor.io/repository/github/slow/message-cleaner/badge)](https://www.codefactor.io/repository/github/slow/message-cleaner) [![GitHub issues](https://img.shields.io/github/issues/slow/message-cleaner?style=flat)](https://github.com/slow/message-cleaner/issues) [![GitHub stars](https://img.shields.io/github/stars/slow/message-cleaner?style=flat)](https://github.com/slow/message-cleaner/stargazers) [![Support](https://img.shields.io/discord/875126204758360094)](https://discord.gg/shnvz5ryAt)
+# Message Cleaner [![CodeFactor](https://www.codefactor.io/repository/github/slow/message-cleaner/badge)](https://www.codefactor.io/repository/github/slow/message-cleaner) [![GitHub issues](https://img.shields.io/github/issues/slow/message-cleaner?style=flat)](https://github.com/slow/message-cleaner/issues) [![GitHub stars](https://img.shields.io/github/stars/slow/message-cleaner?style=flat)](https://github.com/slow/message-cleaner/stargazers) [![Support](https://img.shields.io/discord/887015827134632057)](https://discord.gg/HQ5N7Rcajc)
 
 A powercord plugin to prune messages.
 
