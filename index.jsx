@@ -260,8 +260,8 @@ module.exports = class MessageCleaner extends Plugin {
          while (count !== 'all' && count < get.messages.length) get.messages.pop();
          for (const msg of get.messages) {
             if (!this.pruning[channel]) break;
-            await sleep(this.settings.get('normalDelay', 150));
             deleted += await this.deleteMsg(msg.id, msg.channel_id);
+            await sleep(this.settings.get('normalDelay', 150));
          }
       }
       return deleted;
