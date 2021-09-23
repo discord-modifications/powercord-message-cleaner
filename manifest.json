@@ -1,7 +1,7 @@
 {
    "name": "Message Cleaner",
    "version": "2.0.0",
-   "description": "Clears messages in the current channel.",
+   "description": "Clear messages by right clicking channels/guilds/dms or by running a command.",
    "author": "eternal",
    "discord": "shnvz5ryAt",
    "license": "Unlicensed"
