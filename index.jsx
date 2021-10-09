@@ -284,7 +284,8 @@ module.exports = class MessageCleaner extends Plugin {
                   return await this.deleteMsg(msg.id, msg.channel_id);
                });
             }
-            await Promise.all(
+
+            await Promise.allSettled(
                funcs.map((f) => {
                   if (this.pruning[channel]) {
                      return f().then((amount) => {
@@ -293,6 +294,7 @@ module.exports = class MessageCleaner extends Plugin {
                   }
                })
             );
+
             if (this.pruning[channel]) await sleep(this.settings.get('burstDelay', 1000));
          }
       }
