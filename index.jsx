@@ -5,7 +5,7 @@ const { get, del } = require('powercord/http');
 const { sleep, findInReactTree } = require('powercord/util');
 
 const { getChannelId } = getModule(['getLastSelectedChannelId'], false);
-const { getCurrentUser } = getModule(['getNullabeCurrentUser'], false);
+const { getCurrentUser } = getModule(['getNullableCurrentUser'], false);
 const ChannelStore = getModule(['openPrivateChannel'], false);
 const { transitionTo } = getModule(['transitionTo'], false);
 const { getChannel } = getModule(['getChannel'], false);
