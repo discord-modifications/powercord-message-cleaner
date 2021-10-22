@@ -1,8 +1,8 @@
+const { getModule, getAllModules, React, constants: { Routes } } = require('powercord/webpack');
+const { sleep, findInReactTree } = require('powercord/util');
 const { inject, uninject } = require('powercord/injector');
-const { getModule, React, constants: { Routes } } = require('powercord/webpack');
 const { Plugin } = require('powercord/entities');
 const { get, del } = require('powercord/http');
-const { sleep, findInReactTree } = require('powercord/util');
 
 const { getChannelId } = getModule(['getLastSelectedChannelId'], false);
 const { getCurrentUser } = getModule(['getNullableCurrentUser'], false);
@@ -189,9 +189,11 @@ module.exports = class MessageCleaner extends Plugin {
       this.patch('mc-context-menu-dm', DMContextMenu, 'default', this.processContextMenu.bind(this));
       DMContextMenu.default.displayName = 'DMUserContextMenu';
 
-      const ChannelContextMenu = getModule(m => m.default?.displayName == 'ChannelListTextChannelContextMenu', false);
-      this.patch('mc-context-menu-channel', ChannelContextMenu, 'default', this.processContextMenu.bind(this));
-      ChannelContextMenu.default.displayName = 'ChannelListTextChannelContextMenu';
+      const ChannelContextMenu = getAllModules(m => m.default?.displayName == 'ChannelListTextChannelContextMenu', false);
+      for (let i = 0; i < ChannelContextMenu.length; i++) {
+         this.patch(`mc-context-menu-channel-${i}`, ChannelContextMenu[i], 'default', this.processContextMenu.bind(this));
+         ChannelContextMenu[i].default.displayName = 'ChannelListTextChannelContextMenu';
+      }
 
       const GuildContextMenu = getModule(m => m.default?.displayName == 'GuildContextMenu', false);
       this.patch('mc-context-menu-guild', GuildContextMenu, 'default', this.processContextMenu.bind(this));
