@@ -5,7 +5,7 @@ const { Plugin } = require('powercord/entities');
 const { get, del } = require('powercord/http');
 
 const { getChannelId } = getModule(['getLastSelectedChannelId'], false);
-const { getCurrentUser } = getModule(['getNullableCurrentUser'], false);
+const { getCurrentUser } = getModule(['getCurrentUser', 'getUser'], false);
 const ChannelStore = getModule(['openPrivateChannel'], false);
 const { transitionTo } = getModule(['transitionTo'], false);
 const { getChannel } = getModule(['hasChannel'], false);
