@@ -205,9 +205,11 @@ module.exports = class MessageCleaner extends Plugin {
    }
 
    processContextMenu(args, res) {
-      const channel = !res.props?.navId?.includes('guild');
+      const channel = !args[0].guild;
       const children = findInReactTree(res, r => Array.isArray(r));
       const instance = channel ? args[0].channel?.id : args[0].guild?.id;
+      if (!instance) return res;
+
       const mute = findInReactTree(children, (c) => {
          const children = c?.props?.children;
          if (!children || (Array.isArray(children) && !children.length)) return false;
