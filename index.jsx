@@ -1,4 +1,4 @@
-const { getModule, getAllModules, React, constants: { Routes } } = require('powercord/webpack');
+const { getModule, contextMenu, React, constants: { Routes } } = require('powercord/webpack');
 const { sleep, findInReactTree } = require('powercord/util');
 const { inject, uninject } = require('powercord/injector');
 const { Plugin } = require('powercord/entities');
@@ -28,6 +28,7 @@ module.exports = class MessageCleaner extends Plugin {
    startPlugin() {
       this.patches = [];
       this.pruning = {};
+      this.promises = { cancelled: false };
 
       if (!Array.prototype.chunk) {
          Object.defineProperty(Array.prototype, 'chunk', {
@@ -63,6 +64,7 @@ module.exports = class MessageCleaner extends Plugin {
    }
 
    pluginWillUnload() {
+      this.promises.cancelled = true;
       for (const patch of this.patches) uninject(patch);
       powercord.api.commands.unregisterCommand('clear');
       powercord.api.settings.unregisterSettings('message-cleaner');
@@ -185,29 +187,69 @@ module.exports = class MessageCleaner extends Plugin {
    }
 
    patchContextMenus() {
-      const DMContextMenu = getModule(m => m.default?.displayName == 'DMUserContextMenu', false);
-      this.patch('mc-context-menu-dm', DMContextMenu, 'default', this.processContextMenu.bind(this));
-      DMContextMenu.default.displayName = 'DMUserContextMenu';
+      this.patchDMContextMenu();
+      this.patchChannelContextMenu();
+      this.patchGuildContextMenu();
+      this.patchGroupContextMenu();
+   }
 
-      const ChannelContextMenu = getAllModules(m => m.default?.displayName == 'ChannelListTextChannelContextMenu', false);
-      for (let i = 0; i < ChannelContextMenu.length; i++) {
-         this.patch(`mc-context-menu-channel-${i}`, ChannelContextMenu[i], 'default', this.processContextMenu.bind(this));
-         ChannelContextMenu[i].default.displayName = 'ChannelListTextChannelContextMenu';
-      }
 
-      const GuildContextMenu = getModule(m => m.default?.displayName == 'GuildContextMenu', false);
-      this.patch('mc-context-menu-guild', GuildContextMenu, 'default', this.processContextMenu.bind(this));
-      GuildContextMenu.default.displayName = 'GuildContextMenu';
+   async patchGroupContextMenu() {
+      const GroupDMContextMenu = await this.getLazyContextMenuModule('GroupDMContextMenu');
+      if (this.promises.cancelled) return;
+      this.patch('mc-group-context-menu', GroupDMContextMenu, 'default', this.processContextMenu.bind(this));
+   }
 
-      const GroupDMContextMenu = getModule(m => m.default?.displayName == 'GroupDMContextMenu', false);
-      this.patch('mc-context-menu-group', GroupDMContextMenu, 'default', this.processContextMenu.bind(this));
-      GroupDMContextMenu.default.displayName = 'GroupDMContextMenu';
+   async patchGuildContextMenu() {
+      const GuildContextMenu = await this.getLazyContextMenuModule('GuildContextMenu');
+      if (this.promises.cancelled) return;
+      this.patch('mc-guild-context-menu', GuildContextMenu, 'default', this.processContextMenu.bind(this));
+   }
+
+   async patchChannelContextMenu() {
+      const ChannelContextMenu = await this.getLazyContextMenuModule('ChannelListTextChannelContextMenu');
+      if (this.promises.cancelled) return;
+      this.patch('mc-channel-context-menu', ChannelContextMenu, 'default', this.processContextMenu.bind(this));
+   }
+
+   async patchDMContextMenu() {
+      const DMContextMenu = await this.getLazyContextMenuModule('DMUserContextMenu');
+      if (this.promises.cancelled) return;
+      this.patch('mc-dm-context-menu', DMContextMenu, 'default', this.processContextMenu.bind(this));
+   }
+
+   getLazyContextMenuModule(displayName) {
+      return new Promise(resolve => {
+         const result = getModule(m => m.default?.displayName === displayName, false);
+         if (result) {
+            resolve(result);
+         } else {
+            const injectionId = `mc-lazy-context-menu-search-${displayName}`;
+            this.patch(injectionId, contextMenu, 'openContextMenuLazy', ([eventHandler, renderLazy, options]) => {
+               const patchedRenderLazy = async (...args) => {
+                  const component = await renderLazy(...args);
+                  try {
+                     const result = component();
+                     const match = result.type.displayName === displayName;
+                     if (match) {
+                        resolve(getModule(m => m.default === result.type, false));
+                        uninject(injectionId);
+                     }
+                  } catch (e) {
+                     this.log(`Unable to resolve the module for '${displayName}'!`, e);
+                  }
+                  return component;
+               };
+               return [eventHandler, patchedRenderLazy, options];
+            }, true);
+         }
+      });
    }
 
    processContextMenu(args, res) {
-      const channel = !args[0].guild;
+      const channel = args[0].channel?.id;
       const children = findInReactTree(res, r => Array.isArray(r));
-      const instance = channel ? args[0].channel?.id : args[0].guild?.id;
+      const instance = args[0].channel?.id ?? args[0].guild?.id;
       if (!instance) return res;
 
       const mute = findInReactTree(children, (c) => {
