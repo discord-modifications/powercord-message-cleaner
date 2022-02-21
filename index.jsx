@@ -243,7 +243,6 @@ module.exports = class MessageCleaner extends Plugin {
 
    async patchGuildContextMenu() {
       const GuildContextMenu = await this.findLazy(m => m.default?.displayName === 'GuildContextMenu');
-      console.log(GuildContextMenu);
       if (this.promises.cancelled) return;
       this.patch('mc-guild-context-menu', GuildContextMenu, 'default', this.processContextMenu.bind(this));
    }
