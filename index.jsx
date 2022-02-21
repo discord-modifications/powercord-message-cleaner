@@ -1,4 +1,5 @@
 const { getModule, contextMenu, React, constants: { Routes } } = require('powercord/webpack');
+const { Menu: { MenuSeperator, MenuItem } } = require('powercord/components');
 const { sleep, findInReactTree } = require('powercord/util');
 const { inject, uninject } = require('powercord/injector');
 const { Plugin } = require('powercord/entities');
@@ -10,7 +11,6 @@ const ChannelStore = getModule(['openPrivateChannel'], false);
 const { transitionTo } = getModule(['transitionTo'], false);
 const { getChannel } = getModule(['hasChannel'], false);
 const { getGuild } = getModule(['getGuild'], false);
-const { MenuItem } = getModule(['MenuItem'], false);
 const { getToken } = getModule(['getToken'], false);
 const { getUser } = getModule(['getUser'], false);
 
@@ -68,6 +68,56 @@ module.exports = class MessageCleaner extends Plugin {
       for (const patch of this.patches) uninject(patch);
       powercord.api.commands.unregisterCommand('clear');
       powercord.api.settings.unregisterSettings('message-cleaner');
+   }
+
+   findLazy(filter) {
+      const direct = getModule(filter, false);
+      if (direct) return direct;
+
+      let oldPush = window.webpackChunkdiscord_app.push;
+
+      return new Promise(resolve => {
+         const onPush = (chunk) => {
+            const [, modules] = chunk;
+
+            for (const id in modules) {
+               const orig = modules[id];
+
+               modules[id] = (module, exports, require) => {
+                  Reflect.apply(orig, null, [module, exports, require]);
+
+                  try {
+                     const res = filter(exports);
+
+                     if (res) {
+                        window.webpackChunkdiscord_app.push = oldPush;
+                        resolve(exports);
+                     }
+                  } catch { }
+               };
+
+               Object.assign(modules[id], orig, {
+                  toString: () => orig.toString()
+               });
+            }
+
+            return Reflect.apply(oldPush, window.webpackChunkdiscord_app, [chunk]);
+         };
+
+         Object.defineProperty(window.webpackChunkdiscord_app, 'push', {
+            configurable: true,
+            set: (push) => {
+               oldPush = push;
+
+               Object.defineProperty(window.webpackChunkdiscord_app, 'push', {
+                  value: onPush,
+                  configurable: true,
+                  writable: true
+               });
+            },
+            get: () => onPush
+         });
+      });
    }
 
    async clear(args, _, channel, guild = false) {
@@ -187,66 +237,48 @@ module.exports = class MessageCleaner extends Plugin {
    }
 
    patchContextMenus() {
-      this.patchDMContextMenu();
-      this.patchChannelContextMenu();
       this.patchGuildContextMenu();
-      this.patchGroupContextMenu();
-   }
-
-
-   async patchGroupContextMenu() {
-      const GroupDMContextMenu = await this.getLazyContextMenuModule('GroupDMContextMenu');
-      if (this.promises.cancelled) return;
-      this.patch('mc-group-context-menu', GroupDMContextMenu, 'default', this.processContextMenu.bind(this));
+      this.patchChannelsContextMenu();
    }
 
    async patchGuildContextMenu() {
-      const GuildContextMenu = await this.getLazyContextMenuModule('GuildContextMenu');
+      const GuildContextMenu = await this.findLazy(m => m.default?.displayName === 'GuildContextMenu');
+      console.log(GuildContextMenu);
       if (this.promises.cancelled) return;
       this.patch('mc-guild-context-menu', GuildContextMenu, 'default', this.processContextMenu.bind(this));
    }
 
-   async patchChannelContextMenu() {
-      const ChannelContextMenu = await this.getLazyContextMenuModule('ChannelListTextChannelContextMenu');
+   async patchChannelsContextMenu() {
+      const ChannelContextMenu = getModule(m => m.default?.toString()?.includes?.('mute-channel'), false);
       if (this.promises.cancelled) return;
       this.patch('mc-channel-context-menu', ChannelContextMenu, 'default', this.processContextMenu.bind(this));
    }
 
-   async patchDMContextMenu() {
-      const DMContextMenu = await this.getLazyContextMenuModule('DMUserContextMenu');
-      if (this.promises.cancelled) return;
-      this.patch('mc-dm-context-menu', DMContextMenu, 'default', this.processContextMenu.bind(this));
-   }
-
-   getLazyContextMenuModule(displayName) {
-      return new Promise(resolve => {
-         const result = getModule(m => m.default?.displayName === displayName, false);
-         if (result) {
-            resolve(result);
-         } else {
-            const injectionId = `mc-lazy-context-menu-search-${displayName}`;
-            this.patch(injectionId, contextMenu, 'openContextMenuLazy', ([eventHandler, renderLazy, options]) => {
-               const patchedRenderLazy = async (...args) => {
-                  const component = await renderLazy(...args);
-                  try {
-                     const result = component();
-                     const match = result.type.displayName === displayName;
-                     if (match) {
-                        resolve(getModule(m => m.default === result.type, false));
-                        uninject(injectionId);
-                     }
-                  } catch (e) {
-                     this.log(`Unable to resolve the module for '${displayName}'!`, e);
-                  }
-                  return component;
-               };
-               return [eventHandler, patchedRenderLazy, options];
-            }, true);
-         }
-      });
-   }
-
    processContextMenu(args, res) {
+      if (args.length === 1 && args[0].type !== void 0) {
+         const button = (!this.pruning[args[0].id] ?
+            React.createElement(MenuItem, {
+               id: 'clean-all',
+               key: 'clean-all',
+               label: 'Purge all messages',
+               action: () => this.clear(['all'], null, args[0].id, false)
+            })
+            :
+            React.createElement(MenuItem, {
+               id: 'stop-cleaning',
+               key: 'stop-cleaning',
+               label: 'Stop purging',
+               action: () => delete this.pruning[args[0].id]
+            })
+         );
+
+         return [
+            res,
+            MenuSeperator,
+            button,
+         ];
+      }
+
       const channel = args[0].channel?.id;
       const children = findInReactTree(res, r => Array.isArray(r));
       const instance = args[0].channel?.id ?? args[0].guild?.id;
