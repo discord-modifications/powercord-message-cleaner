@@ -10,7 +10,7 @@
 
 <h3 align="center">Message Cleaner</h3>
 
-<p align="center">Clear messages by right clicking channels/guilds/dms or by running a command.</p>
+<p align="center">Delete your messages with ease using commands or right click context menus.</p>
 
 ---
 
